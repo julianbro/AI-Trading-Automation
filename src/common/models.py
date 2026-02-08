@@ -3,7 +3,7 @@ Common data models for the trading system.
 """
 from typing import List, Dict, Any, Optional, Literal
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -17,15 +17,14 @@ class Timeframe(str, Enum):
 
 class MarketData(BaseModel):
     """Market data output from Market Monitor"""
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
     symbol: str
     timeframe: Timeframe
     timestamp: datetime
     ohlcv: List[List[float]]  # [[timestamp, open, high, low, close, volume], ...]
-    
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
 
 class PatternType(str, Enum):
@@ -37,17 +36,16 @@ class PatternType(str, Enum):
 
 class SetupEvent(BaseModel):
     """Setup event from Rule Engine"""
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
     event_id: str
     symbol: str
     pattern_type: PatternType
     timestamp: datetime
     timeframes: List[Timeframe]
     context_data: Dict[str, Any]
-    
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
 
 class AIDecision(str, Enum):
@@ -78,15 +76,14 @@ class NextCheck(BaseModel):
 
 class AIDecisionOutput(BaseModel):
     """AI Decision Engine output"""
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
     decision: AIDecision
     confidence: AIConfidence
     reason_code: str  # e.g., "CLEAN_SETUP", "HTF_CONFLICT", "CHOPPY"
     next_check: Optional[NextCheck] = None
-    
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
 
 class OrderSide(str, Enum):
@@ -103,6 +100,10 @@ class OrderType(str, Enum):
 
 class TradeOrder(BaseModel):
     """Trade order to be executed"""
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
     trade_id: str
     symbol: str
     side: OrderSide
@@ -112,11 +113,6 @@ class TradeOrder(BaseModel):
     stop_loss: float
     take_profit: float
     risk_amount: float
-    
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
 
 class TradeStatus(str, Enum):
@@ -129,6 +125,10 @@ class TradeStatus(str, Enum):
 
 class Trade(BaseModel):
     """Active trade"""
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
     trade_id: str
     symbol: str
     side: OrderSide
@@ -141,8 +141,3 @@ class Trade(BaseModel):
     closed_at: Optional[datetime] = None
     pnl: Optional[float] = None
     r_multiple: Optional[float] = None
-    
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
