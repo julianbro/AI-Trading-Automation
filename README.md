@@ -74,10 +74,10 @@ AI-Trading-Automation/
 ├── src/              # Source code
 ├── strategies/       # Trading strategies
 ├── models/           # AI/ML models
-├── data/            # Historical data and logs
-├── tests/           # Unit tests
-├── docs/            # Documentation
-└── config.json      # Configuration file
+├── data/             # Historical data and logs
+├── tests/            # Unit tests
+├── config.json       # Configuration file
+└── README.md         # This file
 ```
 
 ### Contributing
@@ -186,10 +186,10 @@ AI-Trading-Automation/
 ├── src/              # Quellcode
 ├── strategies/       # Trading-Strategien
 ├── models/           # AI/ML-Modelle
-├── data/            # Historische Daten und Logs
-├── tests/           # Unit-Tests
-├── docs/            # Dokumentation
-└── config.json      # Konfigurationsdatei
+├── data/             # Historische Daten und Logs
+├── tests/            # Unit-Tests
+├── config.json       # Konfigurationsdatei
+└── README.md         # Diese Datei
 ```
 
 ### Mitwirken
