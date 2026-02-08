@@ -109,7 +109,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Support
 
-- 📧 Email: [your-email@example.com]
 - 💬 Issues: [GitHub Issues](https://github.com/julianbro/AI-Trading-Automation/issues)
 - 📖 Documentation: [Wiki](https://github.com/julianbro/AI-Trading-Automation/wiki)
 
@@ -222,7 +221,6 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE
 
 ### Support
 
-- 📧 E-Mail: [your-email@example.com]
 - 💬 Issues: [GitHub Issues](https://github.com/julianbro/AI-Trading-Automation/issues)
 - 📖 Dokumentation: [Wiki](https://github.com/julianbro/AI-Trading-Automation/wiki)
 
