@@ -56,7 +56,7 @@ cp config.example.json config.json
 python main.py
 ```
 
-For more detailed usage instructions, please refer to the [documentation](docs/).
+For more detailed usage instructions, please refer to the [Wiki](https://github.com/julianbro/AI-Trading-Automation/wiki).
 
 ### Configuration
 
@@ -168,7 +168,7 @@ cp config.example.json config.json
 python main.py
 ```
 
-Für detailliertere Anweisungen zur Verwendung lesen Sie bitte die [Dokumentation](docs/).
+Für detailliertere Anweisungen zur Verwendung lesen Sie bitte das [Wiki](https://github.com/julianbro/AI-Trading-Automation/wiki).
 
 ### Konfiguration
 
