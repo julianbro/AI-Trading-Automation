@@ -137,13 +137,16 @@ class TradingSystem:
             pattern_type=setup.pattern_type
         )
         
+        # Get current price for AI validation
+        current_price = self.market_monitor.get_latest_price()
+        
         # Step 3: Validate with AI
         logger.info("Step 3: Validating setup with AI")
-        ai_decision = self.ai_decision_engine.validate_setup(setup, market_data)
+        ai_decision = self.ai_decision_engine.validate_setup(setup, market_data, current_price)
         
         # Handle AI decision
         if ai_decision.decision == AIDecision.TRADE:
-            self._execute_trade(setup, ai_decision, market_data)
+            self._execute_trade(setup, ai_decision, current_price)
         elif ai_decision.decision == AIDecision.WAIT:
             self._handle_wait_decision(setup, ai_decision)
         else:
@@ -153,14 +156,14 @@ class TradingSystem:
                 reason=ai_decision.reason_code
             )
     
-    def _execute_trade(self, setup: SetupEvent, ai_decision, market_data: Dict):
+    def _execute_trade(self, setup: SetupEvent, ai_decision, current_price: float):
         """
         Execute a trade for an approved setup.
         
         Args:
             setup: Setup event
             ai_decision: AI decision output
-            market_data: Current market data
+            current_price: Current market price
         """
         logger.info("Step 4: Executing trade")
         
@@ -169,11 +172,12 @@ class TradingSystem:
             logger.warning("Trade execution blocked by risk checks")
             return
         
-        # Get current price
-        current_price = self.market_monitor.get_latest_price()
-        
-        # Create trade order
-        order = self.execution_engine.create_trade_order(setup, ai_decision, current_price)
+        # Create trade order using AI-provided SL/TP
+        try:
+            order = self.execution_engine.create_trade_order(setup, ai_decision, current_price)
+        except ValueError as e:
+            logger.error("Failed to create trade order", error=str(e))
+            return
         
         # Execute order
         trade = self.execution_engine.execute_order(order)
@@ -224,6 +228,9 @@ class TradingSystem:
         
         completed_setups = []
         
+        # Get current price for re-evaluation
+        current_price = self.market_monitor.get_latest_price()
+        
         for event_id, pending in self.pending_setups.items():
             setup = pending["setup"]
             recheck_count = pending["recheck_count"]
@@ -238,10 +245,10 @@ class TradingSystem:
                 continue
             
             # Re-validate with AI
-            ai_decision = self.ai_decision_engine.validate_setup(setup, market_data)
+            ai_decision = self.ai_decision_engine.validate_setup(setup, market_data, current_price)
             
             if ai_decision.decision == AIDecision.TRADE:
-                self._execute_trade(setup, ai_decision, market_data)
+                self._execute_trade(setup, ai_decision, current_price)
                 completed_setups.append(event_id)
             elif ai_decision.decision == AIDecision.NO_TRADE:
                 logger.info("Pending setup rejected", event_id=event_id)

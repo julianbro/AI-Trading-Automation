@@ -53,18 +53,38 @@ def main():
     
     # Step 3: Validate with AI
     print("Step 3: Validating setups with AI...")
+    
+    # Get current price for AI validation
+    current_price = market_monitor.get_latest_price()
+    print(f"Current Price: ${current_price:.2f}")
+    
     for i, setup in enumerate(setups, 1):
         print(f"\n  Setup {i}:")
         print(f"    Pattern: {setup.pattern_type}")
         print(f"    Symbol: {setup.symbol}")
         print(f"    Timeframes: {', '.join(str(tf) for tf in setup.timeframes)}")
         
-        # Get AI decision
-        ai_decision = ai_engine.validate_setup(setup, market_data)
+        # Get AI decision with SL/TP
+        ai_decision = ai_engine.validate_setup(setup, market_data, current_price)
         
         print(f"    AI Decision: {ai_decision.decision}")
         print(f"    Confidence: {ai_decision.confidence}")
         print(f"    Reason: {ai_decision.reason_code}")
+        
+        # Show AI-defined trade parameters for TRADE decisions
+        if ai_decision.decision.value == "TRADE":
+            print(f"\n    📊 AI-Defined Trade Parameters:")
+            print(f"      Entry Price: ${ai_decision.entry_price or current_price:.2f}")
+            print(f"      Stop Loss: ${ai_decision.stop_loss:.2f}")
+            print(f"      Take Profit: ${ai_decision.take_profit:.2f}")
+            print(f"      Side: {ai_decision.side.upper()}")
+            
+            # Calculate and show R:R
+            entry = ai_decision.entry_price or current_price
+            risk = abs(entry - ai_decision.stop_loss)
+            reward = abs(ai_decision.take_profit - entry)
+            rr_ratio = reward / risk if risk > 0 else 0
+            print(f"      Risk/Reward: 1:{rr_ratio:.2f}")
         
         if ai_decision.next_check:
             print(f"    Next Check: {ai_decision.next_check.type} - {ai_decision.next_check.value}")

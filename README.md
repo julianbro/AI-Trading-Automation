@@ -6,12 +6,27 @@ AI-unterstütztes automatisiertes Trading-System
 
 Ein regelbasiertes, automatisiertes Trading-System mit klarer Trennung von Verantwortlichkeiten:
 
-- **Python-Code** erkennt Setups und führt Trades aus
-- **AI (LLM)** bewertet ausschließlich die Qualität eines Setups
-- Keine AI-Execution, kein "freies Denken", keine Heuristiken im Risiko
+- **Python-Code** erkennt Setups basierend auf deterministischen Regeln
+- **AI (LLM)** bewertet die Qualität eines Setups UND definiert Stop-Loss und Take-Profit
+- **Python-Code** führt Trades mechanisch aus und validiert AI-Vorschläge
 - Vollständige Nachvollziehbarkeit & Reproduzierbarkeit
 
-**👉 AI denkt – Maschine entscheidet.**
+**👉 AI denkt – Maschine entscheidet und validiert.**
+
+## Neue Features
+
+### ✨ AI-Definierte Stop-Loss & Take-Profit
+
+Die AI übernimmt nun die Definition von SL/TP basierend auf:
+- **Pattern-Kontext**: Trend, Marktphase, wichtige Levels
+- **Klare Invalidierung**: Stop-Loss dort, wo das Pattern objektiv kaputt ist
+- **Risk/Reward-Ratio**: Mindestens 1:1, idealerweise 2:1 oder besser
+
+Die Python-Komponente validiert alle AI-Vorschläge:
+- ✅ SL max. 10% vom Entry entfernt
+- ✅ Logische Platzierung (SL unter Entry bei Long)
+- ✅ Mindest-R/R-Verhältnis von 1:1
+- ✅ Trade wird abgelehnt bei invaliden Werten
 
 ## Architektur
 
@@ -163,34 +178,55 @@ Unterstützte Patterns:
 
 ### 3. AI Decision Engine
 
-Validiert Setups mit LLM:
+Validiert Setups mit LLM und definiert SL/TP:
 
 ```python
 from src.ai_decision import AIDecisionEngine
 
 ai_engine = AIDecisionEngine()
-decision = ai_engine.validate_setup(setup, market_data)
+decision = ai_engine.validate_setup(setup, market_data, current_price)
 
 print(f"Decision: {decision.decision}")  # TRADE, NO_TRADE, WAIT
 print(f"Confidence: {decision.confidence}")  # LOW, MID, HIGH
 print(f"Reason: {decision.reason_code}")
+
+# Für TRADE-Entscheidungen:
+if decision.decision == "TRADE":
+    print(f"Entry: ${decision.entry_price}")
+    print(f"Stop Loss: ${decision.stop_loss}")
+    print(f"Take Profit: ${decision.take_profit}")
+    print(f"Side: {decision.side}")  # buy oder sell
 ```
+
+**AI-Trading-Prinzipien:**
+1. **Pattern-Kontext ist Pflicht** - Pattern nur an logischen Market-Levels (Support/Resistance, VWAP, etc.)
+2. **Klare Invalidierung** - Stop-Loss dort, wo das Pattern objektiv falsch ist
+3. **Risk > Setup** - Denken in R-Multiples, fixes Risiko pro Trade
 
 ### 4. Execution & Risk Engine
 
-Führt Trades mit striktem Risk Management aus:
+Führt Trades mit striktem Risk Management aus und validiert AI-Vorschläge:
 
 ```python
 from src.execution_risk import ExecutionRiskEngine
 
 exec_engine = ExecutionRiskEngine(account_balance=10000.0)
 
-if exec_engine.should_execute_trade(ai_decision):
+# Validierung der AI-Parameter
+is_valid, error = exec_engine.validate_ai_trade_parameters(ai_decision, current_price)
+
+if is_valid and exec_engine.should_execute_trade(ai_decision):
     order = exec_engine.create_trade_order(setup, ai_decision, current_price)
     trade = exec_engine.execute_order(order)
 ```
 
-Risk Mapping:
+**Validierungsregeln:**
+- ✅ SL max. 10% vom Entry (verhindert Tippfehler)
+- ✅ SL min. 0.1% vom Entry (zu enge SLs werden abgelehnt)
+- ✅ Logische Platzierung (Long: SL < Entry < TP)
+- ✅ Min. R/R-Verhältnis 1:1
+
+Risk Mapping (unverändert):
 - LOW Confidence → 0.5R
 - MID Confidence → 1.0R  
 - HIGH Confidence → 2.0R

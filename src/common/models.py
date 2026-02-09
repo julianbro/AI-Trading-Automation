@@ -84,6 +84,12 @@ class AIDecisionOutput(BaseModel):
     confidence: AIConfidence
     reason_code: str  # e.g., "CLEAN_SETUP", "HTF_CONFLICT", "CHOPPY"
     next_check: Optional[NextCheck] = None
+    
+    # AI-defined trade parameters (only present when decision is TRADE)
+    entry_price: Optional[float] = None  # Suggested entry price
+    stop_loss: Optional[float] = None  # Stop loss level
+    take_profit: Optional[float] = None  # Take profit level
+    side: Optional[str] = None  # "buy" or "sell"
 
 
 class OrderSide(str, Enum):

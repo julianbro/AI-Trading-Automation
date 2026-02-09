@@ -86,6 +86,77 @@ class ExecutionRiskEngine:
         
         return True
     
+    def validate_ai_trade_parameters(
+        self, 
+        ai_decision: AIDecisionOutput, 
+        current_price: float
+    ) -> tuple[bool, str]:
+        """
+        Validate AI-provided trade parameters.
+        
+        Args:
+            ai_decision: AI decision output with trade parameters
+            current_price: Current market price
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Check required fields are present
+        if ai_decision.decision == AIDecision.TRADE:
+            if not ai_decision.stop_loss or not ai_decision.take_profit:
+                return False, "Missing stop_loss or take_profit for TRADE decision"
+            
+            if not ai_decision.side:
+                return False, "Missing side (buy/sell) for TRADE decision"
+            
+            # Use entry_price if provided, otherwise use current_price
+            entry_price = ai_decision.entry_price or current_price
+            stop_loss = ai_decision.stop_loss
+            take_profit = ai_decision.take_profit
+            side = ai_decision.side.lower()
+            
+            # Validate stop loss is not too far from entry
+            sl_distance_pct = abs(entry_price - stop_loss) / entry_price * 100
+            if sl_distance_pct > 10:  # Max 10% stop loss
+                return False, f"Stop loss too far from entry: {sl_distance_pct:.2f}% (max 10%)"
+            
+            if sl_distance_pct < 0.1:  # Min 0.1% stop loss
+                return False, f"Stop loss too close to entry: {sl_distance_pct:.2f}% (min 0.1%)"
+            
+            # Validate logical placement based on side
+            if side == "buy":
+                if stop_loss >= entry_price:
+                    return False, "Stop loss must be below entry price for long trades"
+                if take_profit <= entry_price:
+                    return False, "Take profit must be above entry price for long trades"
+            elif side == "sell":
+                if stop_loss <= entry_price:
+                    return False, "Stop loss must be above entry price for short trades"
+                if take_profit >= entry_price:
+                    return False, "Take profit must be below entry price for short trades"
+            else:
+                return False, f"Invalid side: {side} (must be 'buy' or 'sell')"
+            
+            # Validate risk/reward ratio
+            risk_distance = abs(entry_price - stop_loss)
+            reward_distance = abs(take_profit - entry_price)
+            rr_ratio = reward_distance / risk_distance if risk_distance > 0 else 0
+            
+            if rr_ratio < 1.0:  # Minimum 1:1 risk/reward
+                return False, f"Risk/reward ratio too low: {rr_ratio:.2f} (min 1:1)"
+            
+            logger.info(
+                "AI trade parameters validated",
+                entry_price=entry_price,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                side=side,
+                sl_distance_pct=sl_distance_pct,
+                rr_ratio=rr_ratio
+            )
+        
+        return True, ""
+    
     def create_trade_order(
         self,
         setup: SetupEvent,
@@ -97,47 +168,35 @@ class ExecutionRiskEngine:
         
         Args:
             setup: Setup event
-            ai_decision: AI decision output
+            ai_decision: AI decision output with SL/TP from AI
             current_price: Current market price
             
         Returns:
             TradeOrder object
         """
+        # Validate AI trade parameters first
+        is_valid, error_msg = self.validate_ai_trade_parameters(ai_decision, current_price)
+        if not is_valid:
+            logger.error(
+                "AI trade parameters validation failed",
+                error=error_msg,
+                ai_decision=ai_decision.model_dump()
+            )
+            raise ValueError(f"Invalid AI trade parameters: {error_msg}")
+        
         # Calculate risk amount based on AI confidence
         risk_r = config.risk.risk_mapping[ai_decision.confidence.value]
         risk_amount = self.account_balance * (risk_r / 100)
         
-        # Determine order side based on pattern
-        # For breakout retest and support bounce, we go long
-        side = OrderSide.BUY
-        
-        # Calculate stop loss based on structure
-        # Use support/resistance levels from setup
-        if "levels" in setup.context_data:
-            levels = setup.context_data["levels"]
-            
-            if side == OrderSide.BUY:
-                # Stop loss below support/resistance
-                stop_loss = levels.get("support", levels.get("resistance", current_price * 0.98))
-                stop_loss = stop_loss * 0.995  # Small buffer
-            else:
-                # Stop loss above resistance
-                stop_loss = levels.get("resistance", current_price * 1.02)
-                stop_loss = stop_loss * 1.005  # Small buffer
-        else:
-            # Default stop loss: 2% below entry
-            stop_loss = current_price * 0.98 if side == OrderSide.BUY else current_price * 1.02
+        # Use AI-provided values
+        entry_price = ai_decision.entry_price or current_price
+        stop_loss = ai_decision.stop_loss
+        take_profit = ai_decision.take_profit
+        side = OrderSide.BUY if ai_decision.side.lower() == "buy" else OrderSide.SELL
         
         # Calculate position size based on risk
-        risk_per_unit = abs(current_price - stop_loss)
+        risk_per_unit = abs(entry_price - stop_loss)
         quantity = risk_amount / risk_per_unit
-        
-        # Calculate take profit (fixed RR ratio of 1:2)
-        risk_distance = abs(current_price - stop_loss)
-        if side == OrderSide.BUY:
-            take_profit = current_price + (risk_distance * 2)
-        else:
-            take_profit = current_price - (risk_distance * 2)
         
         # Create order
         order = TradeOrder(
@@ -153,14 +212,16 @@ class ExecutionRiskEngine:
         )
         
         logger.info(
-            "Trade order created",
+            "Trade order created from AI parameters",
             trade_id=order.trade_id,
             symbol=order.symbol,
             side=order.side,
+            entry_price=entry_price,
             quantity=order.quantity,
             stop_loss=order.stop_loss,
             take_profit=order.take_profit,
-            risk_amount=order.risk_amount
+            risk_amount=risk_amount,
+            rr_ratio=(abs(take_profit - entry_price) / abs(entry_price - stop_loss))
         )
         
         return order
