@@ -15,6 +15,9 @@ pydantic>=2.0.0  # Data validation
 # Logging
 structlog>=23.0.0  # Structured logging
 
+# Backtesting / Plotting
+matplotlib>=3.8.0
+
 # Testing (optional)
 pytest>=7.0.0
 pytest-asyncio>=0.21.0

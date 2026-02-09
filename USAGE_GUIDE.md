@@ -44,6 +44,32 @@ MAX_DRAWDOWN=20.0
 COOLDOWN_AFTER_LOSSES=3
 ```
 
+### 4. Backtesting (Monitoring Focus)
+
+Simulate day-by-day setup detection over the last N days and plot signals:
+
+```python
+from src.backtesting import BacktestEngine
+
+engine = BacktestEngine()
+signals = engine.run(
+   symbol="BTC/USDT",
+   days=60,
+   timeframes=["1d", "4h", "15m"],
+   use_mock_ai=True,  # set to False to use real AI
+   plot_timeframe="1d",
+)
+
+print(f"Signals: {len(signals)}")
+if signals:
+   engine.plot_signal(signals[0], before=15, after=15)
+```
+
+Notes:
+- Requires `1d` in `timeframes` to simulate day-by-day.
+- `use_mock_ai=True` avoids external AI calls.
+- Plots show entry/SL/TP lines when available.
+
 ### 3. Run Examples
 
 **Paper Trading:**
