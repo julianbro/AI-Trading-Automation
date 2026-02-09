@@ -3,6 +3,7 @@ ccxt>=4.0.0  # Cryptocurrency exchange integration
 pandas>=2.0.0  # Data manipulation
 numpy>=1.24.0  # Numerical operations
 python-dateutil>=2.8.0  # Date utilities
+requests>=2.31.0  # HTTP requests for custom exchange clients
 
 # LLM Integration
 openai>=1.0.0  # OpenAI API

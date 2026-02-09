@@ -25,7 +25,7 @@ Edit `.env` file with your settings:
 # Exchange Configuration
 EXCHANGE_API_KEY=your_api_key_here
 EXCHANGE_API_SECRET=your_api_secret_here
-EXCHANGE_NAME=binance
+EXCHANGE_NAME=bitunix  # bitunix (custom), binance, or other CCXT exchange
 
 # LLM Configuration  
 OPENAI_API_KEY=your_openai_api_key_here
@@ -46,6 +46,11 @@ COOLDOWN_AFTER_LOSSES=3
 
 ### 3. Run Examples
 
+**Test Bitunix Integration:**
+```bash
+python examples/test_bitunix_integration.py
+```
+
 **Paper Trading:**
 ```bash
 python examples/paper_trading_example.py
@@ -55,6 +60,40 @@ python examples/paper_trading_example.py
 ```bash
 python examples/setup_detection_example.py
 ```
+
+## Exchange Configuration
+
+### Using Bitunix (Default)
+
+The system now defaults to Bitunix exchange with custom integration:
+
+```env
+EXCHANGE_NAME=bitunix
+EXCHANGE_API_KEY=your_bitunix_key
+EXCHANGE_API_SECRET=your_bitunix_secret
+PAPER_TRADING=true
+```
+
+**Features:**
+- ✅ Custom API integration
+- ✅ Sandbox/testnet support
+- ✅ Market data (ticker, OHLCV)
+- ✅ Trading operations
+- ✅ Clear error messages
+
+See [BITUNIX_INTEGRATION.md](BITUNIX_INTEGRATION.md) for detailed setup instructions.
+
+### Using Other Exchanges
+
+To use CCXT-supported exchanges (Binance, Bybit, etc.):
+
+```env
+EXCHANGE_NAME=binance  # or bybit, bitget, etc.
+EXCHANGE_API_KEY=your_key
+EXCHANGE_API_SECRET=your_secret
+```
+
+The system automatically detects and uses CCXT when available.
 
 ## Component Usage
 
