@@ -12,7 +12,7 @@ load_dotenv()
 
 class ExchangeConfig(BaseModel):
     """Exchange configuration"""
-    name: str = Field(default_factory=lambda: os.getenv("EXCHANGE_NAME", "binance"))
+    name: str = Field(default_factory=lambda: os.getenv("EXCHANGE_NAME", "bitunix"))
     api_key: str = Field(default_factory=lambda: os.getenv("EXCHANGE_API_KEY", ""))
     api_secret: str = Field(default_factory=lambda: os.getenv("EXCHANGE_API_SECRET", ""))
     paper_trading: bool = Field(default_factory=lambda: os.getenv("PAPER_TRADING", "true").lower() == "true")

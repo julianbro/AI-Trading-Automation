@@ -57,7 +57,7 @@ Trade Monitoring (Überwachung)
 ### Voraussetzungen
 
 - Python 3.8+
-- Cryptocurrency Exchange Account (z.B. Binance)
+- Cryptocurrency Exchange Account (Bitunix recommended, or any CCXT-supported exchange)
 - OpenAI API Key (für LLM)
 
 ### Setup
@@ -87,7 +87,7 @@ Bearbeiten Sie die `.env` Datei:
 # Exchange Configuration
 EXCHANGE_API_KEY=your_api_key_here
 EXCHANGE_API_SECRET=your_api_secret_here
-EXCHANGE_NAME=binance
+EXCHANGE_NAME=bitunix  # Custom Bitunix integration (recommended) or any CCXT exchange
 
 # LLM Configuration
 OPENAI_API_KEY=your_openai_api_key_here

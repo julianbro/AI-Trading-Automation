@@ -14,6 +14,7 @@ import structlog
 
 from src.common.models import MarketData, Timeframe
 from src.config import config
+from src.exchanges import BitunixClient
 
 logger = structlog.get_logger(__name__)
 
@@ -35,21 +36,44 @@ class MarketMonitor:
         """
         self.symbol = symbol or config.trading.default_symbol
         self.timeframes = timeframes or config.trading.timeframes
+        self.exchange_name = config.exchange.name.lower()
         
-        # Initialize exchange
-        exchange_class = getattr(ccxt, config.exchange.name)
-        self.exchange = exchange_class({
-            'apiKey': config.exchange.api_key,
-            'secret': config.exchange.api_secret,
-            'enableRateLimit': True,
-            'options': {
-                'defaultType': 'future' if config.exchange.paper_trading else 'spot',
-            }
-        })
-        
-        if config.exchange.paper_trading:
-            self.exchange.set_sandbox_mode(True)
-            logger.info("Market Monitor initialized in PAPER TRADING mode")
+        # Initialize exchange - support both CCXT and custom clients
+        if self.exchange_name == 'bitunix':
+            logger.info("Using custom Bitunix client")
+            self.exchange = BitunixClient(
+                api_key=config.exchange.api_key,
+                api_secret=config.exchange.api_secret,
+                sandbox=config.exchange.paper_trading
+            )
+            self.is_bitunix = True
+            
+            if config.exchange.paper_trading:
+                logger.info("Market Monitor initialized in PAPER TRADING mode (Bitunix)")
+        else:
+            logger.info(f"Using CCXT for exchange: {config.exchange.name}")
+            try:
+                exchange_class = getattr(ccxt, config.exchange.name)
+                self.exchange = exchange_class({
+                    'apiKey': config.exchange.api_key,
+                    'secret': config.exchange.api_secret,
+                    'enableRateLimit': True,
+                    'options': {
+                        'defaultType': 'future' if config.exchange.paper_trading else 'spot',
+                    }
+                })
+                
+                if config.exchange.paper_trading:
+                    self.exchange.set_sandbox_mode(True)
+                    logger.info("Market Monitor initialized in PAPER TRADING mode")
+                    
+                self.is_bitunix = False
+            except AttributeError:
+                logger.error(
+                    f"Exchange '{config.exchange.name}' not supported by CCXT. "
+                    "Please use 'bitunix' or another CCXT-supported exchange."
+                )
+                raise ValueError(f"Unsupported exchange: {config.exchange.name}")
         
         # In-memory cache for recent candles
         self.cache: Dict[str, pd.DataFrame] = {}
@@ -58,7 +82,8 @@ class MarketMonitor:
             "Market Monitor initialized",
             symbol=self.symbol,
             timeframes=self.timeframes,
-            exchange=config.exchange.name
+            exchange=config.exchange.name,
+            is_custom_client=self.is_bitunix
         )
     
     def fetch_ohlcv(self, timeframe: str, limit: int = 100) -> MarketData:
@@ -173,8 +198,12 @@ class MarketMonitor:
             Latest price
         """
         try:
-            ticker = self.exchange.fetch_ticker(self.symbol)
-            return ticker['last']
+            if self.is_bitunix:
+                ticker = self.exchange.fetch_ticker(self.symbol)
+                return ticker['last']
+            else:
+                ticker = self.exchange.fetch_ticker(self.symbol)
+                return ticker['last']
         except Exception as e:
             logger.error("Error fetching latest price", error=str(e))
             raise
