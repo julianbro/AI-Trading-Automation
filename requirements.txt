@@ -1,0 +1,20 @@
+# Core dependencies
+ccxt>=4.0.0  # Cryptocurrency exchange integration
+pandas>=2.0.0  # Data manipulation
+numpy>=1.24.0  # Numerical operations
+python-dateutil>=2.8.0  # Date utilities
+
+# LLM Integration
+openai>=1.0.0  # OpenAI API
+anthropic>=0.7.0  # Anthropic Claude API (optional)
+
+# Configuration
+python-dotenv>=1.0.0  # Environment variables
+pydantic>=2.0.0  # Data validation
+
+# Logging
+structlog>=23.0.0  # Structured logging
+
+# Testing (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
