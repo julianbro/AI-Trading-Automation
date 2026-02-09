@@ -198,12 +198,8 @@ class MarketMonitor:
             Latest price
         """
         try:
-            if self.is_bitunix:
-                ticker = self.exchange.fetch_ticker(self.symbol)
-                return ticker['last']
-            else:
-                ticker = self.exchange.fetch_ticker(self.symbol)
-                return ticker['last']
+            ticker = self.exchange.fetch_ticker(self.symbol)
+            return ticker['last']
         except Exception as e:
             logger.error("Error fetching latest price", error=str(e))
             raise
